@@ -1,4 +1,5 @@
 from __future__ import annotations
+import time
 from utilities import HeaderTCP
 from random import randint
 import socket
@@ -155,6 +156,18 @@ class SocketTCP:
       print('Conexión aceptada')
       return self, self.address
 
+  def settimeout(self, timeout_in_seconds: float) -> None:
+    """Método encargado de setear un timeout al socket. Usa la función
+    settimeout de sockets para setear el timeout del socket udp
+    subyacente.
+
+    Parameters:
+    -----------
+    timeout_in_seconds (float): Tiempo de timeout a fijar en el socket
+                                en segundos.
+    """
+    # seteamos el timeout al socket udp subyacente
+    self.__socket.settimeout(timeout_in_seconds)
     
 
 
