@@ -7,6 +7,7 @@ if __name__ == "__main__":
   # Primero que nada se instancia un socket tcp,
   # se define un tamaño de buffer y una secuencia de fin de mensaje
   socketTCP = SocketTCP()
+  # Con un buff_size no multiplo de 64 tarda mas pues se pierden ACKS
   buff_size: int = 128
   end_of_message: str = "\r\n\r\n"
 
@@ -20,7 +21,7 @@ if __name__ == "__main__":
 
     # Aceptamos conexión
     connection, address = socketTCP.accept()
-    print('accepted')
+    print('====== ACCEPTED CONNECTION =======')
 
     # Recibimos el mensaje completo junto con su dirección de origen
     msg = receive_full_mesage(connection, buff_size, end_of_message)

@@ -396,6 +396,7 @@ class SocketTCP:
         else:
           self.__bytes_left_to_recv = int(last_msg_data)
           recvd_msg = True
+          print(f'========= TOTAL LENGTH OF MSG: {self.__bytes_left_to_recv} ==========')
 
     # Definimos mensaje recibido
     recvd_total_msg = ""
@@ -409,14 +410,21 @@ class SocketTCP:
     while True:
 
       try:
-          
-        # obtenemos la data del ultimo mensaje
-        last_msg_data = self.get_data(last_recvd_msg.decode())
+        
+        # Si el numero de secuencia recibido es menor al guardado, estamos
+        # recibiendo un trozo duplicado, por lo que hay que reenviar el ACK (se perdió).
+        if self.parse_header(last_recvd_msg.decode()).seq < self.seq:
+          last_msg_data = ""
 
-        # Actualizamos los bytes recibidos, por recibir y el número de secuencia
-        bytes_recvd += len(last_msg_data.encode())
-        self.seq += len(last_msg_data.encode())
-        self.__bytes_left_to_recv -= len(last_msg_data.encode())
+        
+        else:
+          # obtenemos la data del ultimo mensaje
+          last_msg_data = self.get_data(last_recvd_msg.decode())
+
+          # Actualizamos los bytes recibidos, por recibir y el número de secuencia
+          bytes_recvd += len(last_msg_data.encode())
+          self.seq += len(last_msg_data.encode())
+          self.__bytes_left_to_recv -= len(last_msg_data.encode())
 
         # Construimos el header de la respuesta
         tcp_msg_to_send = self.generate_header(
@@ -426,17 +434,22 @@ class SocketTCP:
           )
         )
 
-        # Enviamos la respuesta
-        self.__socket.sendto(tcp_msg_to_send.encode(), transmitter_address)
-
+        # Si con este mensaje nos pasamos del tamaño del buffer, no respondemos ACK
         if bytes_recvd > buff_size + bytes_msg_len:
-          bytes_recvd -= len(last_msg_data.encode())
+          self.seq -= len(last_msg_data.encode())
+          print(f'========= LENGTH LEFT TO RCV : {self.__bytes_left_to_recv} ==========')
           return recvd_total_msg.encode()
-        
 
+        # Si llegamos justo al tamaño del buffer o se acaba el mensaje, respondemos ACK
         elif self.__bytes_left_to_recv == 0 or bytes_recvd == buff_size + bytes_msg_len:
+          # Enviamos la respuesta
+          self.__socket.sendto(tcp_msg_to_send.encode(), transmitter_address)
           recvd_total_msg += last_msg_data
+          print(f'========= LENGTH LEFT TO RCV : {self.__bytes_left_to_recv} ==========')
           return recvd_total_msg.encode()
+
+        # Si no se cumplen las dos condiciones anteriores, también enviamos el mensaje
+        self.__socket.sendto(tcp_msg_to_send.encode(), transmitter_address)
 
         # Recibimos y parseamos lo que nos responden
         last_recvd_msg, transmitter_address = self.__socket.recvfrom(self.__buff_size)

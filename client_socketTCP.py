@@ -8,6 +8,7 @@ if __name__ == "__main__":
   # se define un tamaño de buffer y una secuencia de fin de mensaje
   socketTCP = SocketTCP()
   end_of_message: str = "\r\n\r\n"
+  timeout: float = 3
 
   try:
 
@@ -33,11 +34,11 @@ if __name__ == "__main__":
       file_content: str = f.read()
       f.close()
 
-      socketTCP.settimeout(0.8)
-      print('set')
+      socketTCP.settimeout(timeout)
 
       socketTCP.connect((addr, port))
-      print('connected')
+      print('====== CONNECTED =======')
+
       socketTCP.send(file_content + end_of_message)
       print(f"Sent content of file {file_name} to server running on ({addr}, {port})")
 
